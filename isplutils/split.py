@@ -133,3 +133,10 @@ def make_splits(dfdc_df: str, ffpp_df: str, dfdc_dir: str, ffpp_dir: str, dbs: D
             split_dict[split_name][split_db] = (split_df, root)
 
     return split_dict
+
+
+def my_make_split(subjects_dir: str, dbs: Dict[str, List[str]]) -> Dict[str, Dict[str, Tuple[pd.DataFrame, str]]]:
+    split_dict = {}
+    full_dfs = {}
+    for split_name, split_dbs in dbs.items():
+        pass
