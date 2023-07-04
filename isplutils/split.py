@@ -22,22 +22,31 @@ available_datasets = [
     'ff-c23-720-140-140-20fpv',
     'ff-c23-720-140-140-25fpv',
     'celebdf',  # just for convenience, not used in the original paper
+    'subject-50-10-5'
 ]
 
 
-def load_df(dfdc_df_path: str, ffpp_df_path: str, dfdc_faces_dir: str, ffpp_faces_dir: str, dataset: str) -> (pd.DataFrame, str):
+def load_df(
+        dfdc_df_path: str, ffpp_df_path: str, subject_df_path: str,
+        dfdc_faces_dir: str, ffpp_faces_dir: str, subject_root_dir: str,
+        dataset: str
+) -> (pd.DataFrame, str):
     if dataset.startswith('dfdc'):
         df = pd.read_pickle(dfdc_df_path)
         root = dfdc_faces_dir
     elif dataset.startswith('ff-'):
         df = pd.read_pickle(ffpp_df_path)
         root = ffpp_faces_dir
+    elif dataset.startswith('subject'):
+        df = pd.read_pickle(subject_df_path)
+        root = subject_root_dir
     else:
         raise NotImplementedError('Unknown dataset: {}'.format(dataset))
     return df, root
 
 
 def get_split_df(df: pd.DataFrame, dataset: str, split: str) -> pd.DataFrame:
+    split_df = None
     if dataset == 'dfdc-35-5-10':
         if split == 'train':
             split_df = df[df['folder'].isin(range(35))]
@@ -101,12 +110,36 @@ def get_split_df(df: pd.DataFrame, dataset: str, split: str) -> pd.DataFrame:
             raise NotImplementedError('Unknown split: {}'.format(split))
         # Restore random state
         np.random.set_state(st0)
+
+    elif dataset.startswith("subject"):
+        num_frames = len(df)
+        split_amount = dataset.split("-")[1:]
+        train_frames = int(num_frames * (int(split_amount[0]) / 100))
+        val_frames = int(num_frames * (int(split_amount[1]) / 100))
+        test_frames = int(num_frames * (int(split_amount[2]) / 100))
+
+        split_df_val = df.sample(n=val_frames, random_state=41)
+        df = df.drop(split_df_val.index)
+        split_df_test = df.sample(n=test_frames, random_state=41)
+        df = df.drop(split_df_test.index)
+        split_df_train = df.sample(n=train_frames, random_state=41)
+
+        if split == "train":
+            split_df = split_df_train.copy()
+        elif split == "val":
+            split_df = split_df_val.copy()
+        elif split == "test":
+            split_df = split_df_test.copy()
     else:
         raise NotImplementedError('Unknown dataset: {}'.format(dataset))
     return split_df
 
 
-def make_splits(dfdc_df: str, ffpp_df: str, dfdc_dir: str, ffpp_dir: str, dbs: Dict[str, List[str]]) -> Dict[str, Dict[str, Tuple[pd.DataFrame, str]]]:
+def make_splits(
+        dfdc_df: str, ffpp_df: str, subject_df: str,
+        dfdc_dir: str, ffpp_dir: str, subject_dir,
+        dbs: Dict[str, List[str]]
+) -> Dict[str, Dict[str, Tuple[pd.DataFrame, str]]]:
     """
     Make split and return Dataframe and root
     :param
@@ -127,16 +160,10 @@ def make_splits(dfdc_df: str, ffpp_df: str, dfdc_dir: str, ffpp_dir: str, dbs: D
         split_dict[split_name] = dict()
         for split_db in split_dbs:
             if split_db not in full_dfs:
-                full_dfs[split_db] = load_df(dfdc_df, ffpp_df, dfdc_dir, ffpp_dir, split_db)
+                full_dfs[split_db] = load_df(dfdc_df, ffpp_df, subject_df, dfdc_dir, ffpp_dir, subject_dir, split_db)
             full_df, root = full_dfs[split_db]
             split_df = get_split_df(df=full_df, dataset=split_db, split=split_name)
             split_dict[split_name][split_db] = (split_df, root)
 
     return split_dict
 
-
-def my_make_split(subjects_dir: str, dbs: Dict[str, List[str]]) -> Dict[str, Dict[str, Tuple[pd.DataFrame, str]]]:
-    split_dict = {}
-    full_dfs = {}
-    for split_name, split_dbs in dbs.items():
-        pass

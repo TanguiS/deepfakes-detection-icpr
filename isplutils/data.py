@@ -103,7 +103,7 @@ class FrameFaceIterableDataset(IterableDataset):
         self.dfs = dfs
         self.size = int(size)
 
-        self.seed0 = int(seed) if seed is not None else np.random.choice(2 ** 32)
+        self.seed0 = int(seed) if seed is not None else np.random.choice(2 ** 16)
 
         # adapt indices
         dfs_adapted = [df.copy() for df in self.dfs]

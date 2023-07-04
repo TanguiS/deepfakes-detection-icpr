@@ -45,18 +45,29 @@ def main():
                         required=True)
     parser.add_argument('--valdb', type=str, help='Validation datasets', nargs='+', choices=split.available_datasets,
                         required=True)
+
     parser.add_argument('--dfdc_faces_df_path', type=str, action='store',
                         help='Path to the Pandas Dataframe obtained from extract_faces.py on the DFDC dataset. '
                              'Required for training/validating on the DFDC dataset.')
     parser.add_argument('--dfdc_faces_dir', type=str, action='store',
                         help='Path to the directory containing the faces extracted from the DFDC dataset. '
                              'Required for training/validating on the DFDC dataset.')
+
     parser.add_argument('--ffpp_faces_df_path', type=str, action='store',
                         help='Path to the Pandas Dataframe obtained from extract_faces.py on the FF++ dataset. '
                              'Required for training/validating on the FF++ dataset.')
     parser.add_argument('--ffpp_faces_dir', type=str, action='store',
                         help='Path to the directory containing the faces extracted from the FF++ dataset. '
                              'Required for training/validating on the FF++ dataset.')
+
+    parser.add_argument('--subject_df_path', type=str, action='store',
+                        help='Path to the Pandas Dataframe obtained from extract_faces program ' +
+                             ' for TanguiS deepfacelab project '
+                             'Required for training/validating on the SUBJECT dataset.')
+    parser.add_argument('--subject_root_dir', type=str, action='store',
+                        help='Path to the subject root directory. '
+                             'Required for training/validating on the SUBJECT dataset.')
+
     parser.add_argument('--face', type=str, help='Face crop or scale', required=True,
                         choices=['scale', 'tight'])
     parser.add_argument('--size', type=int, help='Train patch size', required=True)
@@ -95,10 +106,15 @@ def main():
     net_class = getattr(fornet, args.net)
     train_datasets = args.traindb
     val_datasets = args.valdb
+
     dfdc_df_path = args.dfdc_faces_df_path
     ffpp_df_path = args.ffpp_faces_df_path
+    subject_df = args.subject_df_path
+
     dfdc_faces_dir = args.dfdc_faces_dir
     ffpp_faces_dir = args.ffpp_faces_dir
+    subject_root_dir = args.subject_root_dir
+
     face_policy = args.face
     face_size = args.size
 
@@ -217,13 +233,19 @@ def main():
             raise RuntimeError('Specify DataFrame and directory for DFDC faces for training!')
         elif dataset.split('-')[0] == 'ff' and (ffpp_df_path is None or ffpp_faces_dir is None):
             raise RuntimeError('Specify DataFrame and directory for FF++ faces for training!')
+        elif dataset.split('-')[0] == 'subject' and (subject_root_dir is None or subject_df is None):
+            raise RuntimeError('Specify DataFrame and directory for SUBJECT faces for training!')
     for dataset in val_datasets:
         if dataset.split('-')[0] == 'dfdc' and (dfdc_df_path is None or dfdc_faces_dir is None):
             raise RuntimeError('Specify DataFrame and directory for DFDC faces for validation!')
         elif dataset.split('-')[0] == 'ff' and (ffpp_df_path is None or ffpp_faces_dir is None):
             raise RuntimeError('Specify DataFrame and directory for FF++ faces for validation!')
+        elif dataset.split('-')[0] == 'subject' and (subject_root_dir is None or subject_df is None):
+            raise RuntimeError('Specify DataFrame and directory for SUBJECT faces for validation!')
     # Load splits with the make_splits function
-    splits = split.make_splits(dfdc_df=dfdc_df_path, ffpp_df=ffpp_df_path, dfdc_dir=dfdc_faces_dir, ffpp_dir=ffpp_faces_dir,
+    splits = split.make_splits(dfdc_df=dfdc_df_path, ffpp_df=ffpp_df_path, dfdc_dir=dfdc_faces_dir,
+                               ffpp_dir=ffpp_faces_dir,
+                               subject_df=subject_df, subject_dir=subject_root_dir,
                                dbs={'train': train_datasets, 'val': val_datasets})
     train_dfs = [splits['train'][db][0] for db in splits['train']]
     train_roots = [splits['train'][db][1] for db in splits['train']]
