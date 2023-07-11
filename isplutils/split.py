@@ -1,4 +1,7 @@
 from typing import List, Dict, Tuple
+
+from pandas import DataFrame
+
 """
 Video Face Manipulation Detection Through Ensemble of CNNs
 
@@ -39,6 +42,7 @@ def load_df(
         root = ffpp_faces_dir
     elif dataset.startswith('subject'):
         df = pd.read_pickle(subject_df_path)
+        df = balance_dataframe(df)
         root = subject_root_dir
     else:
         raise NotImplementedError('Unknown dataset: {}'.format(dataset))
@@ -135,6 +139,23 @@ def get_split_df(df: pd.DataFrame, dataset: str, split: str) -> pd.DataFrame:
     return split_df
 
 
+def balance_dataframe(dataframe: DataFrame) -> DataFrame:
+    print("Balancing dataframe...")
+
+    class_counts = dataframe['label'].value_counts()
+    minority_class = class_counts.idxmax()
+    majority_class = class_counts.idxmin()
+    max_count_per_class = class_counts.min()
+
+    minority_class_data = dataframe[dataframe['label'] == minority_class]
+    majority_class_data = dataframe[dataframe['label'] == majority_class]
+
+    balanced_minority_class_data = minority_class_data.sample(n=max_count_per_class, random_state=41)
+    balanced_dataframe = pd.concat([majority_class_data, balanced_minority_class_data])
+
+    return balanced_dataframe
+
+
 def make_splits(
         dfdc_df: str, ffpp_df: str, subject_df: str,
         dfdc_dir: str, ffpp_dir: str, subject_dir,
@@ -166,4 +187,3 @@ def make_splits(
             split_dict[split_name][split_db] = (split_df, root)
 
     return split_dict
-

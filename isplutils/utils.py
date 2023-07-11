@@ -153,12 +153,12 @@ def get_transformer(face_policy: str, patch_size: int, net_normalizer: transform
         # The loader crops the face isotropically then scales to a square of size patch_size_load
         loading_transformations = [
             A.PadIfNeeded(min_height=patch_size, min_width=patch_size,
-                          border_mode=cv2.BORDER_CONSTANT, value=0,always_apply=True),
-            A.Resize(height=patch_size,width=patch_size,always_apply=True),
+                          border_mode=cv2.BORDER_CONSTANT, value=0, always_apply=True),
+            A.Resize(height=patch_size, width=patch_size, always_apply=True),
         ]
         if train:
             downsample_train_transformations = [
-                A.Downscale(scale_max=0.5, scale_min=0.5, p=0.5),  # replaces scaled dataset
+                A.Downscale(scale_max=0.5, scale_min=0.5, p=0.5, interpolation=cv2.INTER_LINEAR),  # replaces scaled dataset
             ]
         else:
             downsample_train_transformations = []
@@ -167,11 +167,11 @@ def get_transformer(face_policy: str, patch_size: int, net_normalizer: transform
         loading_transformations = [
             A.LongestMaxSize(max_size=patch_size, always_apply=True),
             A.PadIfNeeded(min_height=patch_size, min_width=patch_size,
-                          border_mode=cv2.BORDER_CONSTANT, value=0,always_apply=True),
+                          border_mode=cv2.BORDER_CONSTANT, value=0, always_apply=True),
         ]
         if train:
             downsample_train_transformations = [
-                A.Downscale(scale_max=0.5, scale_min=0.5, p=0.5),  # replaces scaled dataset
+                A.Downscale(scale_max=0.5, scale_min=0.5, p=0.5, interpolation=cv2.INTER_LINEAR),  # replaces scaled dataset
             ]
         else:
             downsample_train_transformations = []
@@ -188,7 +188,7 @@ def get_transformer(face_policy: str, patch_size: int, net_normalizer: transform
                 ]),
                 A.OneOf([
                     A.ISONoise(),
-                    A.IAAAdditiveGaussianNoise(scale=(0.01 * 255, 0.03 * 255)),
+                    A.GaussNoise(var_limit=(0.01 * 255, 0.03 * 255)),
                 ]),
                 A.Downscale(scale_min=0.7, scale_max=0.9, interpolation=cv2.INTER_LINEAR),
                 A.ImageCompression(quality_lower=50, quality_upper=99),

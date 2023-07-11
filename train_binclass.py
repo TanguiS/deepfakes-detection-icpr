@@ -293,7 +293,7 @@ def main():
         train_pred_list = []
         train_labels_list = []
         for train_batch in tqdm(train_loader, desc='Epoch {:03d}'.format(epoch), leave=False,
-                                total=len(train_loader) // train_loader.batch_size):
+                                total=len(train_loader)):
             net.train()
             batch_data, batch_labels = train_batch
 
@@ -321,57 +321,9 @@ def main():
                 tb.add_scalar('lr', optimizer.param_groups[0]['lr'], iteration)
                 tb.add_scalar('epoch', epoch, iteration)
 
-                # Checkpoint
-                save_model(net, optimizer, train_loss, val_loss, iteration, batch_size, epoch, last_path)
                 train_loss = train_num = 0
 
-            # Validation
-            if iteration > 0 and (iteration % validation_interval == 0):
 
-                # Model checkpoint
-                save_model(net, optimizer, train_loss, val_loss, iteration, batch_size, epoch,
-                           periodic_path.format(iteration))
-
-                # Train cumulative stats
-                train_labels = np.concatenate(train_labels_list)
-                train_pred = np.concatenate(train_pred_list)
-                train_labels_list = []
-                train_pred_list = []
-
-                train_roc_auc = roc_auc_score(train_labels, train_pred)
-                tb.add_scalar('train/roc_auc', train_roc_auc, iteration)
-                tb.add_pr_curve('train/pr', train_labels, train_pred, iteration)
-
-                # Validation
-                val_loss = validation_routine(net, device, val_loader, criterion, tb, iteration, 'val')
-                tb.flush()
-
-                # LR Scheduler
-                lr_scheduler.step(val_loss)
-
-                # Model checkpoint
-                if val_loss < min_val_loss:
-                    min_val_loss = val_loss
-                    save_model(net, optimizer, train_loss, val_loss, iteration, batch_size, epoch, bestval_path)
-
-                # Attention
-                if enable_attention and hasattr(net, 'get_attention'):
-                    net.eval()
-                    # For each dataframe show the attention for a real,fake couple of frames
-                    for df, root, sample_idx, tag in [
-                        (train_dfs[0], train_roots[0], train_dfs[0][train_dfs[0]['label'] == False].index[0],
-                         'train/att/real'),
-                        (train_dfs[0], train_roots[0], train_dfs[0][train_dfs[0]['label'] == True].index[0],
-                         'train/att/fake'),
-                    ]:
-                        record = df.loc[sample_idx]
-                        tb_attention(tb, tag, iteration, net, device, face_size, face_policy,
-                                     transformer, root, record)
-
-                if optimizer.param_groups[0]['lr'] == min_lr:
-                    print('Reached minimum learning rate. Stopping.')
-                    stop = True
-                    break
 
             iteration += 1
 
@@ -380,14 +332,68 @@ def main():
                 stop = True
                 break
 
-            # End of iteration
-
+        # End of iteration
+        # Validation
+        # Model checkpoint
+        stop, train_labels_list, train_pred_list = validation(
+            batch_size, bestval_path, criterion, device, enable_attention, epoch, face_policy, face_size,
+            iteration, lr_scheduler, min_lr, min_val_loss, net, optimizer, periodic_path, stop, tb, train_dfs,
+            train_labels_list, train_loss, train_pred_list, train_roots, transformer, val_loader, val_loss
+        )
         epoch += 1
 
     # Needed to flush out last events
     tb.close()
 
     print('Completed')
+
+
+def validation(batch_size, bestval_path, criterion, device, enable_attention, epoch, face_policy, face_size, iteration,
+               lr_scheduler, min_lr, min_val_loss, net, optimizer, periodic_path, stop, tb, train_dfs,
+               train_labels_list, train_loss, train_pred_list, train_roots, transformer, val_loader, val_loss):
+
+    save_model(net, optimizer, train_loss, val_loss, iteration, batch_size, epoch,
+               periodic_path.format(iteration))
+
+    # Train cumulative stats
+    train_labels = np.concatenate(train_labels_list)
+    train_pred = np.concatenate(train_pred_list)
+    train_labels_list = []
+    train_pred_list = []
+    train_roc_auc = roc_auc_score(train_labels, train_pred)
+    tb.add_scalar('train/roc_auc', train_roc_auc, iteration)
+    tb.add_pr_curve('train/pr', train_labels, train_pred, iteration)
+
+    # Validation
+    val_loss = validation_routine(net, device, val_loader, criterion, tb, iteration, 'val')
+    tb.flush()
+
+    # LR Scheduler
+    lr_scheduler.step(val_loss)
+
+    # Model checkpoint
+    if val_loss < min_val_loss:
+        min_val_loss = val_loss
+        save_model(net, optimizer, train_loss, val_loss, iteration, batch_size, epoch, bestval_path)
+
+    # Attention
+    if enable_attention and hasattr(net, 'get_attention'):
+        net.eval()
+
+        # For each dataframe show the attention for a real,fake couple of frames
+        for df, root, sample_idx, tag in [
+            (train_dfs[0], train_roots[0], train_dfs[0][train_dfs[0]['label'] == False].index[0],
+             'train/att/real'),
+            (train_dfs[0], train_roots[0], train_dfs[0][train_dfs[0]['label'] == True].index[0],
+             'train/att/fake'),
+        ]:
+            record = df.loc[sample_idx]
+            tb_attention(tb, tag, iteration, net, device, face_size, face_policy,
+                         transformer, root, record)
+    if optimizer.param_groups[0]['lr'] == min_lr:
+        print('Reached minimum learning rate. Stopping.')
+        stop = True
+    return stop, train_labels_list, train_pred_list
 
 
 def tb_attention(tb: SummaryWriter,
@@ -437,7 +443,7 @@ def validation_routine(net, device, val_loader, criterion, tb, iteration, tag: s
     val_loss = 0.
     pred_list = list()
     labels_list = list()
-    for val_data in tqdm(val_loader, desc='Validation', leave=False, total=len(val_loader) // loader_len_norm):
+    for val_data in tqdm(val_loader, desc='Validation', leave=False, total=len(val_loader)):
         batch_data, batch_labels = val_data
 
         val_batch_num = len(batch_labels)

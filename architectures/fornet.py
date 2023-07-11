@@ -179,7 +179,7 @@ Xception
 class Xception(FeatureExtractor):
     def __init__(self):
         super(Xception, self).__init__()
-        self.xception = externals.xception()
+        self.xception = externals.xception(2, None)
         self.xception.last_linear = nn.Linear(2048, 1)
 
     def features(self, x: torch.Tensor) -> torch.Tensor:
