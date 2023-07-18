@@ -335,7 +335,7 @@ def main():
         # End of iteration
         # Validation
         # Model checkpoint
-        stop, train_labels_list, train_pred_list = validation(
+        stop, train_labels_list, train_pred_list, min_val_loss = validation(
             batch_size, bestval_path, criterion, device, enable_attention, epoch, face_policy, face_size,
             iteration, lr_scheduler, min_lr, min_val_loss, net, optimizer, periodic_path, stop, tb, train_dfs,
             train_labels_list, train_loss, train_pred_list, train_roots, transformer, val_loader, val_loss
@@ -393,7 +393,7 @@ def validation(batch_size, bestval_path, criterion, device, enable_attention, ep
     if optimizer.param_groups[0]['lr'] == min_lr:
         print('Reached minimum learning rate. Stopping.')
         stop = True
-    return stop, train_labels_list, train_pred_list
+    return stop, train_labels_list, train_pred_list, min_val_loss
 
 
 def tb_attention(tb: SummaryWriter,
