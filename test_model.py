@@ -25,6 +25,7 @@ from tqdm import tqdm
 
 from architectures import fornet
 from architectures.fornet import FeatureExtractor
+from evaluation.util import read_models_information
 from isplutils import utils, split
 from isplutils.data import FrameFaceDatasetTest
 
@@ -98,10 +99,7 @@ def main():
     subject_root_dir = args.subject_root_dir
 
     # get arguments from the model path
-    face_policy = str(model_path).split('face-')[1].split('_')[0]
-    patch_size = int(str(model_path).split('size-')[1].split('_')[0])
-    net_name = str(model_path).split('net-')[1].split('_')[0]
-    model_name = '_'.join(model_path.with_suffix('').parts[-2:])
+    face_policy, patch_size, net_name, model_name = read_models_information(model_path)
 
     # Load net
     net_class = getattr(fornet, net_name)
