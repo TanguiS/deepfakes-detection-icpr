@@ -1,7 +1,9 @@
 from pathlib import Path
 from typing import Union
 
+import numpy as np
 import torch
+from torch import nn
 
 from architectures.fornet import FeatureExtractor
 from evaluation.util import read_models_information, preprocess_image, read_image
@@ -15,10 +17,14 @@ class ModelEvaluator:
 
     def evaluate(self, image_path_or_base64: Union[Path, str]):
         image = read_image(image_path_or_base64)
-        image_preprocessed = preprocess_image(image, self.__model, self.__face_policy, self.__patch_size)
+        image_array = np.array(image)
+        image_preprocessed = preprocess_image(image_array, self.__model, self.__face_policy, self.__patch_size)
 
         with torch.no_grad():
             yhat = self.__model(image_preprocessed)
-        return yhat
+            soft_yhat_predict_class = nn.functional.sigmoid(yhat).cpu().numpy()[0][0]
+            soft_yhat_opposite_class = 1 - soft_yhat_predict_class
+        return soft_yhat_predict_class, soft_yhat_opposite_class
+
 
 

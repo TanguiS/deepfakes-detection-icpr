@@ -82,7 +82,12 @@ def evaluate(
 
         count += 1
         sum_time += (end - start)
+
         y_true.append(int(label))
+        y_pred.append(int(yhat[0] > 0.5))
+
+        yhat_0.append(yhat[0])
+        yhat_1.append(yhat[1])
 
     return y_true, y_pred, sum_time / count, yhat_0, yhat_1
 
@@ -122,3 +127,7 @@ def main():
     plot_confusion_matrix(y_true, y_pred, net_name, (256, 256, 3))
 
     save_yhat(yhat_0, yhat_1, avg_time, csv_path)
+
+
+if __name__ == "__main__":
+    main()

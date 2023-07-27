@@ -1,4 +1,5 @@
 import base64
+from io import BytesIO
 from pathlib import Path
 from typing import Tuple, Union
 
@@ -6,6 +7,7 @@ import albumentations as A
 import cv2
 import numpy as np
 import torch
+from PIL import Image
 from numpy import ndarray
 
 from architectures import fornet
@@ -30,12 +32,12 @@ def preprocess_image(image: ndarray, model: FeatureExtractor, face_policy: str, 
     return face_batch
 
 
-def read_image(image_path_or_base64: Union[str, Path]) -> ndarray:
+def read_image(image_path_or_base64: Union[str, Path]) -> Image:
     if isinstance(image_path_or_base64, Path):
-        return cv2.imread(str(image_path_or_base64))
+        return Image.open(str(image_path_or_base64))
     image_bytes = base64.b64decode(image_path_or_base64)
-    image_array = np.frombuffer(image_bytes, np.uint8)
-    return cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+    image_stream = BytesIO(image_bytes)
+    return Image.open(image_stream)
 
 
 def load_model(model_path: Path, net_name: str) -> FeatureExtractor:
@@ -46,5 +48,6 @@ def load_model(model_path: Path, net_name: str) -> FeatureExtractor:
         state = state_tmp
     net_class = getattr(fornet, net_name)
     net: FeatureExtractor = net_class().eval().to('cpu')
-    net.load_state_dict(state['net'], strict=True)
+    missing = net.load_state_dict(state['net'], strict=True)
+    print(missing)
     return net

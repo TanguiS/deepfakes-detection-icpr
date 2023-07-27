@@ -52,6 +52,7 @@ def load_face(record: pd.Series, root: str, size: int, scale: str, transformer: 
     if not os.path.exists(cached_path):
         try:
             frame = Image.open(path)
+            test = np.array(frame)
             bb = record['left'], record['top'], record['right'], record['bottom']
             face = extract_bb(frame, bb=bb, size=size, scale=scale)
 

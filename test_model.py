@@ -192,6 +192,8 @@ def main():
                                           num_workers=num_workers, device=device, )
             df['score'] = dataset_out['score'].astype(np.float32)
             df['scaled_score'] = dataset_out['scaled_score'].astype(np.float32)
+            df['dim0'] = dataset_out['dim0'].astype(np.float32)
+            df['dim1'] = dataset_out['dim1'].astype(np.float32)
             df['loss'] = dataset_out['loss'].astype(np.float32)
             print('Saving results to: {}'.format(df_path))
             df.to_pickle(str(df_path))
@@ -239,6 +241,8 @@ def process_dataset(df: pd.DataFrame,
     score = np.zeros(len(df))
     loss = np.zeros(len(df))
     scaled_score = np.zeros(len(df))
+    test1_score = np.zeros(len(df))
+    test2_score = np.zeros(len(df))
 
     loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False, drop_last=False)
     with torch.no_grad():
@@ -250,12 +254,16 @@ def process_dataset(df: pd.DataFrame,
             batch_out = net(batch_images)
             batch_loss = criterion(batch_out, batch_labels)
             batch_out_scaled = nn.functional.sigmoid(batch_out)
+            test1 = nn.functional.softmax(batch_out, dim=0)
+            test2 = nn.functional.softmax(batch_out, dim=1)
             score[idx0:idx0 + batch_samples] = batch_out.cpu().numpy()[:, 0]
             scaled_score[idx0:idx0 + batch_samples] = batch_out_scaled.cpu().numpy()[:, 0]
+            test1_score[idx0:idx0 + batch_samples] = test1.cpu().numpy()[:, 0]
+            test2_score[idx0:idx0 + batch_samples] = test2.cpu().numpy()[:, 0]
             loss[idx0:idx0 + batch_samples] = batch_loss.cpu().numpy()[:, 0]
             idx0 += batch_samples
 
-    out_dict = {'score': score, 'scaled_score':scaled_score, 'loss': loss}
+    out_dict = {'score': score, 'scaled_score': scaled_score, 'dim0': test1_score, 'dim1': test2_score, 'loss': loss}
     return out_dict
 
 
