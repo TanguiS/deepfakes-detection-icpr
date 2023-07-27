@@ -7,7 +7,7 @@ from architectures.fornet import FeatureExtractor
 from evaluation.util import read_models_information, preprocess_image, read_image
 
 
-class Evaluator:
+class ModelEvaluator:
     def __init__(self, loaded_model: FeatureExtractor, model_path: Path) -> None:
         super().__init__()
         self.__model = loaded_model

@@ -158,7 +158,7 @@ def balance_dataframe(dataframe: DataFrame) -> DataFrame:
 
 def make_splits(
         dfdc_df: str, ffpp_df: str, subject_df: str,
-        dfdc_dir: str, ffpp_dir: str, subject_dir,
+        dfdc_dir: str, ffpp_dir: str, subject_dir: str,
         dbs: Dict[str, List[str]]
 ) -> Dict[str, Dict[str, Tuple[pd.DataFrame, str]]]:
     """
