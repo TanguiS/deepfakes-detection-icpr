@@ -9,4 +9,6 @@ torchvision==0.15.2
 tqdm
 tensorboardx==2.6.1
 seaborn
+matplotlib
 scikit-learn==1.2.2
+tensorboard==2.13.0
