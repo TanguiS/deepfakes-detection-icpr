@@ -65,7 +65,7 @@ $ python extract_faces.py -h
 
 ### Training
 
-Only the [train_binclass.py](train_binclass.py) script was adapted, to adapt the [train_triplet.py](train_triplet.py) script you juste need to follow the same steps that i adapted in the binclass script.
+Only the [train_binclass.py](train_binclass.py) script was tested, if the [train_triplet.py](train_triplet.py) script you juste need to follow the same steps that I adapted in the binclass script.
 
 The **distribution** that will be used for your own dataset can be changed by modifying the code in the [split.py](isplutils/split.py) file (follow the instruction line 28).
 
