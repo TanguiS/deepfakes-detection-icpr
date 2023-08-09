@@ -25,7 +25,7 @@ available_datasets = [
     'ff-c23-720-140-140-20fpv',
     'ff-c23-720-140-140-25fpv',
     'celebdf',  # just for convenience, not used in the original paper
-    'subject-85-10-5'
+    'subject-85-10-5'  # Your own dataset, where 85-10-5 stands for the distribution of train-val-test
 ]
 
 

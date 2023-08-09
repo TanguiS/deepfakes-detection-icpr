@@ -1,105 +1,160 @@
-# Video Face Manipulation Detection Through Ensemble of CNNs
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/video-face-manipulation-detection-through/deepfake-detection-on-dfdc)](https://paperswithcode.com/sota/deepfake-detection-on-dfdc?p=video-face-manipulation-detection-through)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/video-face-manipulation-detection-through/deepfake-detection-on-faceforensics-1)](https://paperswithcode.com/sota/deepfake-detection-on-faceforensics-1?p=video-face-manipulation-detection-through)
-[![Build Status](https://travis-ci.org/polimi-ispl/icpr2020dfdc.svg?branch=master)](https://travis-ci.org/polimi-ispl/icpr2020dfdc)
+# Video Face Manipulation Detection Through Ensemble of CNNs - Adaptation
 
-![](assets/faces_attention.png)
 
-<p align='center'>
-  <img src='assets/mqzvfufzoq_face.gif'/>
-  <img src='assets/mqzvfufzoq_face_att.gif'/>
-</p>
+This is not the official repository of **Video Face Manipulation Detection Through Ensemble of CNNs** :
+[Official Repository](https://github.com/polimi-ispl/icpr2020dfdc).
 
-This is the official repository of **Video Face Manipulation Detection Through Ensemble of CNNs**,
-presented at [ICPR2020](https://www.micc.unifi.it/icpr2020/) and currently available on [IEEExplore](https://ieeexplore.ieee.org/document/9412711) and [arXiv](https://arxiv.org/abs/2004.07676).
-If you use this repository for your research, please consider citing our paper. Refer to [How to cite](https://github.com/polimi-ispl/icpr2020dfdc#how-to-cite) section to get the correct entry for your bibliography.
+This repository is an adaptation to the official repo in order to use your own Dataset instead of the ones used for the challenge.
 
-We participated as the **ISPL** team in the [Kaggle Deepfake Detection Challenge](https://www.kaggle.com/c/deepfake-detection-challenge/).
-With this implementation, we reached the 41st position over 2116 teams (**top 2%**) on the [private leaderboard](https://www.kaggle.com/c/deepfake-detection-challenge/leaderboard).
-
-This repository is currently under maintenance, if you are experiencing any problems, please open an [issue](https://github.com/polimi-ispl/icpr2020dfdc/issues).
 ## Getting started
 
 ### Prerequisites
-- Install [conda](https://docs.conda.io/en/latest/miniconda.html)
-- Create the `icpr2020` environment with *environment.yml*
-```bash
-$ conda env create -f environment.yml
-$ conda activate icpr2020
-```
-- Download and unzip the [datasets](#datasets)
 
-### Quick run
-If you just want to test the pre-trained models against your own videos or images:
-- [Video prediction notebook](https://github.com/polimi-ispl/icpr2020dfdc/blob/master/notebook/Video%20prediction.ipynb) <a target="_blank" href="https://colab.research.google.com/drive/12WnvmerHBNbJ49HdoH1lli_O8SwaFPjv?usp=sharing">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg">
-</a>
-
-- [Image prediction notebook](https://github.com/polimi-ispl/icpr2020dfdc/blob/master/notebook/Image%20prediction.ipynb) <a target="_blank" href="https://colab.research.google.com/drive/19oVKlzEr58VZfRnSq-nW8kFYuxkh3GM8?usp=sharing">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg">
-</a>
-
-- [Image prediction with attention](notebook/Image%20prediction%20and%20attention.ipynb) <a target="_blank" href="https://colab.research.google.com/drive/1zcglis2Qx2vtJhrogn8aKA-mbUotLZLK?usp=sharing">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg">
-</a>
-
-### The whole pipeline
-You need to preprocess the datasets in order to index all the samples and extract faces. Just run the script [make_dataset.sh](scripts/make_dataset.sh)
+- Install [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)
+- Environment creation :
 
 ```bash
-$ ./scripts/make_dataset.sh
+$ conda create -n icpr python=3.8
+
+$ conda activate icpr
+
+# Either
+$ pip install -r requirements.txt
+
+# Or
+$ conda install -c conda-forge --file requirements.txt
 ```
 
-Please note that we use only 32 frames per video. You can easily tweak this parameter in [extract_faces.py](extract_faces.py)  
-Also, please note that **for the DFDC** we have resorted to _the training split_ exclusively!  
-In `scripts/make_dataset.sh` the value of `DFDC_SRC` should point to the directory containing the DFDC train split.
+- **DataFrame** requirement : (two possibilities)
+  - Use their pre-process scripts on your dataset, in that case you will have to create a file *metadata.json* which 
+is a reference to the path and label of the *real* and fake *frames* (no available scripts to do so) :
+  - If you used you own face extraction algorithm or want to, here are the pandas DataFrame column requirements :
+    - **index** of the dataframe: *relative paths* to the frames from the location of the dataset root directory.
+    - *label* column with **True** or **False** values respectively for **Fake** and **Real** frames.
+    - **top**, **bottom**, **left** and **right** columns for the box of the extracted faces (If the frames are already extracted at their raw form, it will be the size of their size (0, 0, 512, 512) for instance).
 
+*metadata.json* example of a fake video (split is always "train") and a real video :
 
-### Celeb-DF (v2)
-Altough **we did not use this dataset in the paper**, we provide a script [index_celebdf.py](index_celebdf.py) to index the videos similarly to 
-DFDC and FF++. Once you have the index, you can proceed with the pipeline starting from [extract_faces.py](extract_faces.py). You can also use the 
-split `celebdf` during training/testing.
+```json
+{
+  "path/to/the/fake/videos/fake_video_1.mp4": {
+    "label": "FAKE", "split": "train", "original": "path/to/the/real/videos/original_video_1.mp4"
+  },
+  "path/to/the/real/videos/original_video_1.mp4": {"label": "REAL", "split": "train"}
+}
+```
 
-### Train
-In [train_all.sh](scripts/train_all.sh) you can find a comprehensive list of all the commands to train the models presented in the paper. 
-Please refer to the comments in the script for hints on their usage. 
+preprocess example using their [scripts](./scripts/make_dataset.sh), use it like if it was the **dfdc** dataset:
 
-#### Training a single model
-If you want to train some models without lunching the script:
-- for the **non-siamese** architectures (e.g. EfficientNetB4, EfficientNetB4Att), you can simply specify the model in [train_binclass.py](train_binclass.py) with the *--net* parameter;
-- for the **siamese** architectures (e.g. EfficientNetB4ST, EfficientNetB4AttST), you have to:
-  1. train the architecture as a feature extractor first, using the [train_triplet.py](train_triplet.py) script and being careful of specifying its name with the *--net* parameter **without** the ST suffix. For instance, for training the EfficientNetB4ST you will have to first run `python train_triplet.py --net EfficientNetB4 --otherparams`;
-  2. finetune the model using [train_binclass.py](train_binclass.py), being careful this time to specify the architecture's name **with** the ST suffix and to insert as *--init* argument the path to the weights of the feature extractor trained at the previous step. You will end up running something like `python train_binclass.py --net EfficientNetB4ST --init path/to/EfficientNetB4/weights/trained/with/train_triplet/weights.pth --otherparams`
+```bash
+# Indexing videos
+# Usage
+$ python index_dfdc.py -h
 
-### Test 
-In [test_all.sh](scripts/test_all.sh) you can find a comprehensive list of all the commands for testing the models presented in the paper. 
+# The metadata.json needs to be in the dataset dir
+$ python index_dfdc.py \
+--source "/path/to/your/dataset"
+--videodataset "path/to/your/dataframe.pkl"
+```
 
-#### Pretrained weights
-We also provide pretrained weights for all the architectures presented in the paper. 
-Please refer to this [Dropbox link](https://www.dropbox.com/sh/cesamx5ytd5j08c/AADG_eEmhskliMaT0Gbk-yHDa?dl=0).
-Each directory is named `$NETWORK_$DATASET` where `$NETWORK` is the architecture name and `$DATASET` is the training dataset.
-In each directory, you can find `bestval.pth` which are the best network weights according to the validation set.
+```bash
+# Extracting faces
+# Usage
+$ python extract_faces.py -h
+```
 
+### Training
 
-Additionally, you can find Jupyter notebooks for results computations in the [notebook](notebook) folder.
-  
+Only the [train_binclass.py](train_binclass.py) script was adapted, to adapt the [train_triplet.py](train_triplet.py) script you juste need to follow the same steps that i adapted in the binclass script.
 
-## Datasets
-- [Facebook's DeepFake Detection Challenge (DFDC) train dataset](https://www.kaggle.com/c/deepfake-detection-challenge/data) | [arXiv paper](https://arxiv.org/abs/2006.07397)
-- [FaceForensics++](https://github.com/ondyari/FaceForensics/blob/master/dataset/README.md) | [arXiv paper](https://arxiv.org/abs/1901.08971)
-- [Celeb-DF (v2)](http://www.cs.albany.edu/~lsw/celeb-deepfakeforensics.html) | [arXiv paper](https://arxiv.org/abs/1909.12962) (**Just for reference, not used in the paper**)
+The **distribution** that will be used for your own dataset can be changed by modifying the code in the [split.py](isplutils/split.py) file (follow the instruction line 28).
+
+Available model architecture or **net** : for binclass, [fornet.py](architectures/fornet.py) / for triplet, [tripletnet.py](architectures/tripletnet.py).
+
+Example of training command on *Xception* architecture :
+
+```bash
+# Usage
+$ python train_binclass.py -h
+
+# Training an Xception model
+$ python train_binclass.py \
+--net "Xception" \
+--traindb "subject-85-10-5" \
+--valdb "subject-85-10-5" \
+--subject_df_path "path/to/your/dataframe.pkl" \
+--subject_root_dir "path/to/your/dataset" \
+--size 256 \
+-- batch 128 \
+--maxiter 60000 \
+--logint 10 \
+--log_dir "path/to/your/output/logs" \
+--models_dir "path/to/your/output/models"
+```
+
+You can dynamically monitor the training using the *tensorboard* lib :
+
+```bash
+$ tensorboard --logdir=path/to/your/output/logs
+```
+
+Or using my plot method, [plot_model_history.py](plot_model_history.py) (mainly for presentation purposes) :
+
+```bash
+# Usage
+$ python plot_model_history.py -h
+
+# Plot training history on Xception architecture
+$ python plot_model_history.py \
+--model_dir "path/to/your/output/models/**/Xception*" \
+--event_runs_dir "path/yo/your/output/logs/**/Xception*"
+```
+
+### Testing
+
+Their **testing** script, [test_model.py](test_model.py), will create a pickle file with new column that refers to the achieved score using the *test batch* (it also add a column for binary, categorical column)
+
+Example of testing command on *Xception* architecture :
+
+```bash
+$ python test_model.py \
+--testsets "subject-85-10-5" \
+--testsplits 'test' \
+--subject_df_path "path/to/your/dataframe.pkl" \
+--subject_root_dir "path/to/your/dataset" \
+--model_path "path/to/your/output/models/**/bestval.pth" \
+--results_dir "path/to/your/output/test/results/" \
+--override
+```
+
+My **testing** script, [evaluate_model.py](evaluate_model.py), will show you two matplotlib graph without auto saving. It will create a **yhat.csv** in the same folder as the weights are stored, which save the yhat results and the mean time to evaluate a frame at the end of the file. It will also display a **confusion matrix** which will not be automatically saved.
+
+```bash
+# Usage 
+$ python evaluate_model.py -h
+
+# Evaluating
+$ python evaluate_model.py \
+--testsets "subject-85-10-5" \
+--subject_df_path "path/to/your/dataframe.pkl" \
+--subject_root_dir "path/to/your/dataset" \
+--model_path "path/to/your/output/models/**/bestval.pth"
+```
+
+## Output Example
+
+My training histories and testing can be found in the [results'](results) folder.
+
+My tensorboard histories can also be found in the [runs'](runs) folder.
 
 ## References
-- [EfficientNet PyTorch](https://github.com/lukemelas/EfficientNet-PyTorch)
-- [Xception PyTorch](https://github.com/tstandley/Xception-PyTorch)
-
-## How to cite
 Plain text:
 ```
 N. Bonettini, E. D. Cannas, S. Mandelli, L. Bondi, P. Bestagini and S. Tubaro, "Video Face Manipulation Detection Through Ensemble of CNNs," 2020 25th International Conference on Pattern Recognition (ICPR), 2021, pp. 5012-5019, doi: 10.1109/ICPR48806.2021.9412711.
 ```
 
 Bibtex:
+
 ```bibtex
 @INPROCEEDINGS{9412711,
   author={Bonettini, Nicolò and Cannas, Edoardo Daniele and Mandelli, Sara and Bondi, Luca and Bestagini, Paolo and Tubaro, Stefano},
@@ -111,10 +166,8 @@ Bibtex:
   pages={5012-5019},
   doi={10.1109/ICPR48806.2021.9412711}}
 ```
+
 ## Credits
-[Image and Sound Processing Lab - Politecnico di Milano](http://ispl.deib.polimi.it/)
-- Nicolò Bonettini
-- Edoardo Daniele Cannas
-- Sara Mandelli
-- Luca Bondi
-- Paolo Bestagini
+
+- Tangui Steimetz, [ENSICAEN](https://www.ensicaen.fr/).
+- Guoqiang Li, [MOBAI](https://www.mobai.bio/) - [NTNU](https://www.ntnu.edu/).
